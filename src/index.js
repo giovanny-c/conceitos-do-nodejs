@@ -16,7 +16,7 @@ function checksExistsUserAccount(request, response, next) {
     const user = users.find( user => user.username === username )
 
     if(!user){
-      return response.status(400).json({error: "user not found!"})
+      return response.status(404).json({error: "user not found!"})
     }
 
     request.user = user
@@ -25,10 +25,33 @@ function checksExistsUserAccount(request, response, next) {
 
 }
 
+function checkIfTodoExists(request, response, next){
+    const {id} = request.params
+    const {user} = request
+
+    const todoExists = user.todos.find( todo => todo.id === id )
+
+    if(!todoExists){
+      return response.status(404).json({error: "This todo does not exists"})
+    }
+
+    return next()
+}
+
 app.post('/users', (request, response) => {
     const {name, username} = request.body
 
     const id = uuidv4()
+
+    const usernameAlredyExists = users.some( user => user.username === username)
+    
+    if(usernameAlredyExists){
+  
+      return response.status(400).json({error: "This username already exists!"})//400 bad request do client
+    }
+
+
+    if(users)
 
     users.push({
       id,
@@ -74,17 +97,20 @@ app.post('/todos', checksExistsUserAccount, (request, response) => {
 
 });
 
-app.put('/todos/:id', checksExistsUserAccount, (request, response) => {
+app.put('/todos/:id', checksExistsUserAccount, checkIfTodoExists, (request, response) => {
     const {title, deadline} = request.body
     const {id} = request.params
     const {user} = request
 
+    
     const todos = user.todos.map(todo => {
       
       if(todo.id === id){
         todo.title = title,
         todo.deadline = deadline
       }
+
+      
 
       return todo
     
@@ -96,7 +122,7 @@ app.put('/todos/:id', checksExistsUserAccount, (request, response) => {
 
 });
 
-app.patch('/todos/:id/done', checksExistsUserAccount, (request, response) => {
+app.patch('/todos/:id/done', checksExistsUserAccount, checkIfTodoExists, (request, response) => {
       const {user} = request
       const {id} = request.params
 
@@ -113,7 +139,7 @@ app.patch('/todos/:id/done', checksExistsUserAccount, (request, response) => {
       return response.status(201).send()
 });
 
-app.delete('/todos/:id', checksExistsUserAccount, (request, response) => {
+app.delete('/todos/:id', checksExistsUserAccount, checkIfTodoExists, (request, response) => {
   const {user} = request
   const {id} = request.params
   
