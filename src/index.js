@@ -43,6 +43,12 @@ app.post('/users', (request, response) => {
 
     const id = uuidv4()
 
+    if(name == "" || username ==""){
+
+      return response.status(400).json({error:"you could not create a user whitout a name or username"})
+    }
+
+
     const usernameAlredyExists = users.some( user => user.username === username)
     
     if(usernameAlredyExists){
@@ -79,6 +85,12 @@ app.post('/todos', checksExistsUserAccount, (request, response) => {
     const {title, deadline} = request.body
     const {user} = request
 
+    if(title == "" || deadline ==""){
+
+      return response.status(400).json({error:"you could not create a todo without a title or a deadline"})
+    }
+
+
     const id = uuidv4()
 
     user.todos.push({
@@ -102,12 +114,17 @@ app.put('/todos/:id', checksExistsUserAccount, checkIfTodoExists, (request, resp
     const {id} = request.params
     const {user} = request
 
+    if(title == "" || deadline ==""){
+
+      return response.status(400).json({error:"you could not update a todo without a title or a deadline"})
+    }
+
     
-    const todos = user.todos.map(todo => {
+    user.todos.map(todo => {
       
       if(todo.id === id){
         todo.title = title,
-        todo.deadline = deadline
+        todo.deadline = new Date(deadline)
       }
 
       
