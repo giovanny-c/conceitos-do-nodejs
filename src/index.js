@@ -11,53 +11,53 @@ app.use(express.json());
 const users = [];
 
 function checksExistsUserAccount(request, response, next) {
-    const {username} = request.headers
+  const { username } = request.headers
 
-    const user = users.find( user => user.username === username )
+  const user = users.find(user => user.username === username)
 
-    if(!user){
-      return response.status(404).json({error: "user not found!"})
-    }
+  if (!user) {
+    return response.status(404).json({ error: "user not found!" })
+  }
 
-    request.user = user
-    
-    return next()
+  request.user = user
+
+  return next()
 
 }
 
-function checkIfTodoExists(request, response, next){
-    const {id} = request.params
-    const {user} = request
+function checkIfTodoExists(request, response, next) {
+  const { id } = request.params
+  const { user } = request
 
-    const todoExists = user.todos.find( todo => todo.id === id )
+  const todoExists = user.todos.find(todo => todo.id === id)
 
-    if(!todoExists){
-      return response.status(404).json({error: "This todo does not exists"})
-    }
+  if (!todoExists) {
+    return response.status(404).json({ error: "This todo does not exists" })
+  }
 
-    return next()
+  return next()
 }
 
 app.post('/users', (request, response) => {
-    const {name, username} = request.body
+  const { name, username } = request.body
 
-    const id = uuidv4()
+  const id = uuidv4()
 
-    if(name == "" || username ==""){
+  if (name == "" || username == "") {
 
-      return response.status(400).json({error:"you could not create a user whitout a name or username"})
-    }
-
-
-    const usernameAlredyExists = users.some( user => user.username === username)
-    
-    if(usernameAlredyExists){
-  
-      return response.status(400).json({error: "This username already exists!"})//400 bad request do client
-    }
+    return response.status(400).json({ error: "you could not create a user whitout a name or username" })
+  }
 
 
-    if(users)
+  const usernameAlredyExists = users.some(user => user.username === username)
+
+  if (usernameAlredyExists) {
+
+    return response.status(400).json({ error: "This username already exists!" })//400 bad request do client
+  }
+
+
+  if (users)
 
     users.push({
       id,
@@ -65,116 +65,113 @@ app.post('/users', (request, response) => {
       username,
       todos: []
     })
-      
-    const user = users.find( user => user.id === id)    
-    
-    return response.status(201).json(user)
+
+  const user = users.find(user => user.id === id)
+
+  return response.status(201).json(user)
 
 
 });
 
 app.get('/todos', checksExistsUserAccount, (request, response) => {
-    
-    const {user} = request
 
-    return response.json(user.todos)
+  const { user } = request
+
+  return response.json(user.todos)
 
 });
 
 app.post('/todos', checksExistsUserAccount, (request, response) => {
-    const {title, deadline} = request.body
-    const {user} = request
+  const { title, deadline } = request.body
+  const { user } = request
 
-    if(title == "" || deadline ==""){
+  if (title == "" || deadline == "") {
 
-      return response.status(400).json({error:"you could not create a todo without a title or a deadline"})
-    }
+    return response.status(400).json({ error: "you could not create a todo without a title or a deadline" })
+  }
 
 
-    const id = uuidv4()
+  const id = uuidv4()
 
-    user.todos.push({
-      id,
-      title,
-      done: false,
-      deadline: new Date(deadline),
-      created_at: new Date()
+  user.todos.push({
+    id,
+    title,
+    done: false,
+    deadline: new Date(deadline),
+    created_at: new Date()
 
-    })
+  })
 
-    const todo = user.todos.find( todo => todo.id === id)
+  const todo = user.todos.find(todo => todo.id === id)
 
-    return response.status(201).json(todo)
+  return response.status(201).json(todo)
 
 
 });
 
 app.put('/todos/:id', checksExistsUserAccount, checkIfTodoExists, (request, response) => {
-    const {title, deadline} = request.body
-    const {id} = request.params
-    const {user} = request
+  const { title, deadline } = request.body
+  const { id } = request.params
+  const { user } = request
 
-    if(title == "" || deadline ==""){
+  if (title == "" || deadline == "") {
 
-      return response.status(400).json({error:"you could not update a todo without a title or a deadline"})
-    }
+    return response.status(400).json({ error: "you could not update a todo without a title or a deadline" })
+  }
 
-    
-    user.todos.map(todo => {
-      
-      if(todo.id === id){
-        todo.title = title,
-        todo.deadline = new Date(deadline)
-      }
 
-      
+  const todo = user.todos.find(todo => todo.id === id)
 
-      return todo
-    
-    })
-      
+  if (!todo) {
 
-    return response.status(201).send()
+    return response.status(404).json({ error: "Todo does not exists" })
+  }
+
+
+  todo.title = title
+  todo.deadline = new Date(deadline)
+
+  return response.status(201).json(todo)
 
 
 });
 
 app.patch('/todos/:id/done', checksExistsUserAccount, checkIfTodoExists, (request, response) => {
-      const {user} = request
-      const {id} = request.params
+  const { user } = request
+  const { id } = request.params
 
-      user.todos.map( todo => {
 
-          if(todo.id === id){
-            todo.done = true
+  const todo = user.todos.find(todo => todo.id === id)
 
-          }
+  if (!todo) {
 
-          return todo
-      })
+    return response.status(404).json({ error: "Todo does not exists" })
+  }
 
-      return response.status(201).send()
+  todo.done = true
+
+  return response.status(201).json(todo)
 });
 
 app.delete('/todos/:id', checksExistsUserAccount, checkIfTodoExists, (request, response) => {
-  const {user} = request
-  const {id} = request.params
-  
+  const { user } = request
+  const { id } = request.params
 
-  user.todos.map( todo => {
 
-    if(todo.id === id){
+  user.todos.map(todo => {
+
+    if (todo.id === id) {
 
       let i = user.todos.indexOf(todo)
       user.todos.splice(i, 1)
 
     }
 
-    
+
   })
- 
-  
-  return response.send()
+
+
+  return response.status(204).send()
 
 });
 
